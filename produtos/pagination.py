@@ -11,30 +11,39 @@ class ProdutoPagination(PageNumberPagination):
 
     def paginate_queryset(self, queryset, request, view=None):
         self.request = request
-    page_size_param = request.query_params.get(self.page_size_query_param)
-    if page_size_param is not None:
-      try:
-        if int(page_size_param) > self.max_page_size:
-          raise ValidationError({
-            "page_size": "O campo page_size não pode passar de 100."
-          })
-      except ValueError:
-        pass
+        page_size_param = request.query_params.get(self.page_size_query_param)
+
+        if page_size_param is not None:
+            try:
+                if int(page_size_param) > self.max_page_size:
+                    raise ValidationError({
+                        "page_size": "O campo page_size não pode passar de 100."
+                    })
+            except ValueError:
+                pass
 
         page_size = self.get_page_size(request)
         if page_size is None:
             return None
 
         self.paginator = self.django_paginator_class(queryset, page_size)
+
         try:
-            self.page_number = int(request.query_params.get(self.page_query_param, 1))
+            self.page_number = int(
+                request.query_params.get(self.page_query_param, 1)
+            )
         except (TypeError, ValueError):
-            raise ValidationError({"page": "Informe um número inteiro positivo."})
+            raise ValidationError({
+                "page": "Informe um número inteiro positivo."
+            })
 
         if self.page_number < 1:
-            raise ValidationError({"page": "Informe um número inteiro positivo."})
+            raise ValidationError({
+                "page": "Informe um número inteiro positivo."
+            })
 
         self.total_pages = ceil(self.paginator.count / page_size)
+
         if self.total_pages == 0 or self.page_number > self.total_pages:
             self.page = None
             return []
