@@ -39,8 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_spectacular',
     'rest_framework',
-    'produtos',
     'django_filters',
+    'financeiro',
 ]
 
 MIDDLEWARE = [
@@ -55,10 +55,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -69,6 +70,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
@@ -106,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
 TIME_ZONE = 'UTC'
 
@@ -119,6 +121,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 
 # Email
@@ -136,12 +142,12 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
     "django_filters.rest_framework.DjangoFilterBackend",
 ],
-    "DEFAULT_PAGINATION_CLASS": "produtos.pagination.ProdutoPagination",
+    "DEFAULT_PAGINATION_CLASS": "financeiro.pagination.FinanceiroPagination",
     "PAGE_SIZE": 10,
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "API de Produtos",
-    "DESCRIPTION": "API de produtos construída com Django REST Framework",
+    "TITLE": "API Financeira",
+    "DESCRIPTION": "API de gerenciamento financeiro construída com Django REST Framework",
     "VERSION": "1.0.0",
 }

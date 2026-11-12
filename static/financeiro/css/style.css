@@ -1,0 +1,138 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #263238;
+}
+
+.topo {
+    background-color: #173b35;
+    color: white;
+    padding: 35px 8%;
+}
+
+.topo h1 {
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.topo p {
+    color: #d5e5df;
+}
+
+.container {
+    width: 85%;
+    max-width: 1200px;
+    margin: 40px auto;
+}
+
+.resumo {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.card {
+    flex: 1;
+    min-width: 220px;
+    background-color: white;
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    border-left: 5px solid #173b35;
+}
+
+.card h3 {
+    font-size: 16px;
+    color: #66736f;
+    margin-bottom: 18px;
+}
+
+.card p {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.receita {
+    border-left-color: #22966b;
+}
+
+.despesa {
+    border-left-color: #d9534f;
+}
+
+.acoes {
+    margin-top: 45px;
+}
+
+.acoes h2 {
+    margin-bottom: 22px;
+}
+
+.links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+}
+
+.links a {
+    background-color: white;
+    padding: 25px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #173b35;
+    font-weight: bold;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    transition: 0.3s;
+}
+
+.links a:hover {
+    background-color: #173b35;
+    color: white;
+    transform: translateY(-3px);
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: 92%;
+    }
+
+    .topo {
+        padding: 28px 5%;
+    }
+}
+
+/* Organização dos últimos lançamentos */
+.lancamento {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid #e5e9e7;
+}
+
+.lancamento:last-child {
+    border-bottom: none;
+}
+
+.lancamento p {
+    color: #7a8581;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.lancamento strong {
+    font-size: 16px;
+}
+
+.lancamento > strong {
+    white-space: nowrap;
+}
+

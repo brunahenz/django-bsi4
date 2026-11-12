@@ -6,12 +6,11 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from financeiro.views import dashboard
 
-
-from produtos.views import ProdutoViewSet
 
 router = DefaultRouter()
-router.register("produtos", ProdutoViewSet, basename="produto")
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -19,6 +18,8 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    path("api/financeiro/", include("financeiro.urls")),
+    path("", dashboard, name="dashboard"),
 ]
 
 

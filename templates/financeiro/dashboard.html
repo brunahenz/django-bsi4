@@ -1,0 +1,67 @@
+{% load static %} {% load l10n %}
+
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Financeiro</title>
+    <link rel="stylesheet" href="{% static 'financeiro/css/style.css' %}" />
+  </head>
+  <body>
+    <header class="topo">
+      <h1>Meu Financeiro</h1>
+      <p>Organize sua vida financeira em um só lugar.</p>
+    </header>
+
+    <main class="container">
+      <section class="resumo">
+        <div class="card saldo">
+          <h3>Saldo disponível</h3>
+          <p>R$ {{ saldo_total|floatformat:2|localize }}</p>
+        </div>
+
+        <div class="card receita">
+          <h3>Receitas</h3>
+          <p>R$ {{ total_receitas|floatformat:2|localize }}</p>
+        </div>
+        <div class="card despesa">
+          <h3>Despesas</h3>
+          <p>R$ {{ total_despesas|floatformat:"2"|localize }}</p>
+        </div>
+      </section>
+
+      <section class="acoes">
+        <h2>Gerenciamento financeiro</h2>
+
+        <div class="links">
+          <a href="/api/financeiro/contas/">Contas</a>
+          <a href="/api/financeiro/categorias/">Categorias</a>
+          <a href="/api/financeiro/lancamentos/">Lançamentos</a>
+          <a href="/api/financeiro/orcamentos/">Orçamentos</a>
+        </div>
+      </section>
+
+      <section class="acoes">
+        <h2>Últimos lançamentos</h2>
+
+        <div class="card">
+          {% for lancamento in ultimos_lancamentos %}
+          <div class="lancamento">
+            <div>
+              <strong>{{ lancamento.descricao }}</strong>
+              <p>{{ lancamento.data|date:"d/m/Y" }}</p>
+            </div>
+            <strong>
+              {% if lancamento.tipo == "receita" %}+{% else %}-{% endif %} 
+              R$ {{lancamento.valor|floatformat:"2"|localize}}
+            </strong>
+          </div>
+          {% empty %}
+          <p>Nenhum lançamento cadastrado.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
