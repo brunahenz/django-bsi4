@@ -1,0 +1,292 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamentos - Meu Financeiro</title>
+    <link rel="stylesheet" href="{% static 'financeiro/css/style.css' %}">
+</head>
+<body>
+    <header class="topo">
+        <h1>Meus Lançamentos</h1>
+        <p>Controle suas receitas e despesas.</p>
+        <a href="/">Voltar ao dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="acoes">
+            <div class="card">
+                <h2 id="titulo-formulario">Novo lançamento</h2>
+
+                <form id="form-lancamento">
+                    <input type="hidden" id="lancamento-id">
+
+                    <label for="descricao">Descrição</label>
+                    <input type="text" id="descricao" maxlength="200" required>
+
+                    <label for="valor">Valor (R$)</label>
+                    <input type="number" id="valor" min="0.01" step="0.01" required>
+
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo" required>
+                        <option value="">Selecione</option>
+                        <option value="receita">Receita</option>
+                        <option value="despesa">Despesa</option>
+                    </select>
+
+                    <label for="data">Data</label>
+                    <input type="date" id="data" required>
+
+                    <label for="conta">Conta</label>
+                    <select id="conta" required>
+                        <option value="">Carregando contas...</option>
+                    </select>
+
+                    <label for="categoria">Categoria</label>
+                    <select id="categoria" required>
+                        <option value="">Selecione o tipo primeiro</option>
+                    </select>
+
+                    <label for="observacao">Observação</label>
+                    <textarea id="observacao" rows="3"></textarea>
+
+                    <button type="submit">Salvar lançamento</button>
+                    <button type="button" id="cancelar" hidden>Cancelar edição</button>
+                </form>
+
+                <p id="mensagem" role="alert"></p>
+            </div>
+        </section>
+
+        <section class="acoes">
+            <h2>Lançamentos cadastrados</h2>
+            <div class="card" id="lista-lancamentos">Carregando...</div>
+        </section>
+    </main>
+
+    <script>
+        const API = "/api/financeiro/";
+        const form = document.getElementById("form-lancamento");
+        const lista = document.getElementById("lista-lancamentos");
+        const mensagem = document.getElementById("mensagem");
+
+        let contas = [];
+        let categorias = [];
+
+        async function buscar(endpoint) {
+            const resposta = await fetch(API + endpoint + "?page_size=100");
+
+            if (!resposta.ok) {
+                throw new Error("Não foi possível carregar " + endpoint);
+            }
+
+            const dados = await resposta.json();
+            return dados.results ?? dados;
+        }
+
+        async function carregarOpcoes() {
+            try {
+                [contas, categorias] = await Promise.all([
+                    buscar("contas/"),
+                    buscar("categorias/")
+                ]);
+
+                const campoConta = document.getElementById("conta");
+                campoConta.replaceChildren();
+
+                const opcaoConta = document.createElement("option");
+                opcaoConta.value = "";
+                opcaoConta.textContent = "Selecione uma conta";
+                campoConta.appendChild(opcaoConta);
+
+                contas.forEach(conta => {
+                    const opcao = document.createElement("option");
+                    opcao.value = conta.id;
+                    opcao.textContent = conta.nome + " - " + conta.banco;
+                    campoConta.appendChild(opcao);
+                });
+
+                atualizarCategorias();
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        function atualizarCategorias() {
+            const tipo = document.getElementById("tipo").value;
+            const campo = document.getElementById("categoria");
+
+            campo.replaceChildren();
+
+            const inicial = document.createElement("option");
+            inicial.value = "";
+            inicial.textContent = "Selecione uma categoria";
+            campo.appendChild(inicial);
+
+            categorias
+                .filter(categoria => categoria.tipo === tipo)
+                .forEach(categoria => {
+                    const opcao = document.createElement("option");
+                    opcao.value = categoria.id;
+                    opcao.textContent = categoria.nome;
+                    campo.appendChild(opcao);
+                });
+        }
+
+        document.getElementById("tipo").addEventListener("change", atualizarCategorias);
+
+        async function carregarLancamentos() {
+            try {
+                const lancamentos = await buscar("lancamentos/");
+                lista.replaceChildren();
+
+                if (!lancamentos.length) {
+                    lista.textContent = "Nenhum lançamento cadastrado.";
+                    return;
+                }
+
+                lancamentos.sort((a, b) =>
+                    b.data.localeCompare(a.data) || b.id - a.id
+                );
+
+                lancamentos.forEach(lancamento => {
+                    const item = document.createElement("div");
+                    item.className = "lancamento";
+
+                    const info = document.createElement("div");
+
+                    const descricao = document.createElement("strong");
+                    descricao.textContent = lancamento.descricao;
+
+                    const data = document.createElement("p");
+                    const [ano, mes, dia] = lancamento.data.split("-");
+                    data.textContent = `${dia}/${mes}/${ano}`;
+
+                    const tipo = document.createElement("p");
+                    tipo.textContent = lancamento.tipo === "receita"
+                        ? "Receita"
+                        : "Despesa";
+
+                    const valor = document.createElement("strong");
+                    valor.textContent =
+                        (lancamento.tipo === "receita" ? "+ " : "- ") +
+                        Number(lancamento.valor).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL"
+                        });
+
+                    info.append(descricao, data, tipo, valor);
+
+                    const editar = document.createElement("button");
+                    editar.textContent = "Editar";
+                    editar.onclick = () => editarLancamento(lancamento);
+
+                    const excluir = document.createElement("button");
+                    excluir.textContent = "Excluir";
+                    excluir.onclick = () => excluirLancamento(lancamento.id);
+
+                    item.append(info, editar, excluir);
+                    lista.appendChild(item);
+                });
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        form.addEventListener("submit", async evento => {
+            evento.preventDefault();
+
+            const id = document.getElementById("lancamento-id").value;
+
+            const dados = {
+                descricao: document.getElementById("descricao").value,
+                valor: document.getElementById("valor").value,
+                tipo: document.getElementById("tipo").value,
+                data: document.getElementById("data").value,
+                conta: document.getElementById("conta").value,
+                categoria: document.getElementById("categoria").value,
+                observacao: document.getElementById("observacao").value
+            };
+
+            try {
+                const resposta = await fetch(
+                    id ? API + "lancamentos/" + id + "/" : API + "lancamentos/",
+                    {
+                        method: id ? "PUT" : "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(dados)
+                    }
+                );
+
+                if (!resposta.ok) {
+                    const erro = await resposta.json();
+                    throw new Error(JSON.stringify(erro));
+                }
+
+                mensagem.textContent = id
+                    ? "Lançamento atualizado com sucesso!"
+                    : "Lançamento cadastrado com sucesso!";
+
+                form.reset();
+                document.getElementById("lancamento-id").value = "";
+                document.getElementById("titulo-formulario").textContent = "Novo lançamento";
+                document.getElementById("cancelar").hidden = true;
+                atualizarCategorias();
+                carregarLancamentos();
+            } catch (erro) {
+                mensagem.textContent = "Erro: " + erro.message;
+            }
+        });
+
+        function editarLancamento(lancamento) {
+            document.getElementById("lancamento-id").value = lancamento.id;
+            document.getElementById("descricao").value = lancamento.descricao;
+            document.getElementById("valor").value = lancamento.valor;
+            document.getElementById("tipo").value = lancamento.tipo;
+            document.getElementById("data").value = lancamento.data;
+            document.getElementById("conta").value = lancamento.conta;
+            atualizarCategorias();
+            document.getElementById("categoria").value = lancamento.categoria;
+            document.getElementById("observacao").value = lancamento.observacao || "";
+
+            document.getElementById("titulo-formulario").textContent = "Editar lançamento";
+            document.getElementById("cancelar").hidden = false;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        async function excluirLancamento(id) {
+            if (!confirm("Deseja realmente excluir este lançamento?")) return;
+
+            try {
+                const resposta = await fetch(API + "lancamentos/" + id + "/", {
+                    method: "DELETE"
+                });
+
+                if (!resposta.ok) throw new Error("Não foi possível excluir o lançamento.");
+
+                mensagem.textContent = "Lançamento excluído com sucesso!";
+                carregarLancamentos();
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        document.getElementById("cancelar").addEventListener("click", () => {
+            form.reset();
+            document.getElementById("lancamento-id").value = "";
+            document.getElementById("titulo-formulario").textContent = "Novo lançamento";
+            document.getElementById("cancelar").hidden = true;
+            atualizarCategorias();
+        });
+
+        async function iniciar() {
+            await carregarOpcoes();
+            await carregarLancamentos();
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>

@@ -8,10 +8,14 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "dj-database-url>=3.1.2",
     "django>=6.1.1",
     "django-filter>=26.1",
     "djangorestframework>=3.18.1",
     "drf-spectacular>=0.30.0",
+    "gunicorn>=27.0.1",
+    "psycopg[binary]>=3.3.9",
+    "whitenoise>=6.12.0",
 ]
 
 [project.scripts]
@@ -20,3 +24,10 @@ django-bsi4-1 = "django_bsi4_1:main"
 [build-system]
 requires = ["uv_build>=0.12.12,<0.13.0"]
 build-backend = "uv_build"
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]

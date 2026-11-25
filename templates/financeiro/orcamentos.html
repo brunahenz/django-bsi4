@@ -1,0 +1,280 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamentos - Meu Financeiro</title>
+    <link rel="stylesheet" href="{% static 'financeiro/css/style.css' %}">
+</head>
+<body>
+
+    <header class="topo">
+        <div>
+            <h1>Meus Orçamentos</h1>
+            <p>Organize seus limites de gastos e acompanhe seu planejamento financeiro.</p>
+        </div>
+        <a href="/">Voltar ao dashboard</a>
+    </header>
+
+    <main class="container">
+
+        <section class="acoes" style="margin-bottom: 25px;">
+            <div class="card">
+                <h2 id="titulo-form">Cadastrar orçamento</h2>
+
+                <form id="form-orcamento">
+                    <input type="hidden" id="orcamento-id">
+
+                    <label for="categoria">Categoria de despesa</label>
+                    <select id="categoria" required>
+                        <option value="">Selecione uma categoria</option>
+                    </select>
+
+                    <label for="limite">Limite (R$)</label>
+                    <input
+                        type="number"
+                        id="limite"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Digite o limite"
+                        required
+                    >
+
+                    <label for="mes">Mês</label>
+                    <select id="mes" required>
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+
+                    <label for="ano">Ano</label>
+                    <input
+                        type="number"
+                        id="ano"
+                        min="2000"
+                        max="2100"
+                        required
+                    >
+
+                    <button type="submit" id="btn-salvar">Salvar orçamento</button>
+                    <button type="button" id="btn-cancelar" onclick="cancelarEdicao()" hidden>
+                        Cancelar
+                    </button>
+                </form>
+
+                <p id="mensagem"></p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Orçamentos cadastrados</h2>
+            <div id="lista-orcamentos">
+                <p>Carregando orçamentos...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const API = "/api/financeiro/";
+        let orcamentos = [];
+        let categorias = [];
+
+        const meses = [
+            "", "Janeiro", "Fevereiro", "Março", "Abril",
+            "Maio", "Junho", "Julho", "Agosto",
+            "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        async function buscar(endpoint) {
+            const resposta = await fetch(API + endpoint + "?page_size=100");
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao buscar " + endpoint);
+            }
+
+            const dados = await resposta.json();
+            return dados.results ?? dados;
+        }
+
+        async function carregarDados() {
+            try {
+                const todasCategorias = await buscar("categorias/");
+                categorias = todasCategorias.filter(c => c.tipo === "despesa");
+
+                const select = document.getElementById("categoria");
+                select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+                categorias.forEach(categoria => {
+                    select.innerHTML += `
+                        <option value="${categoria.id}">
+                            ${categoria.nome}
+                        </option>
+                    `;
+                });
+
+                orcamentos = await buscar("orcamentos/");
+                mostrarOrcamentos();
+
+            } catch (erro) {
+                document.getElementById("mensagem").textContent = erro.message;
+            }
+        }
+
+        function mostrarOrcamentos() {
+            const lista = document.getElementById("lista-orcamentos");
+
+            if (orcamentos.length === 0) {
+                lista.innerHTML = "<p>Nenhum orçamento cadastrado.</p>";
+                return;
+            }
+
+            lista.innerHTML = orcamentos.map(orcamento => {
+                const categoria = categorias.find(
+                    c => Number(c.id) === Number(orcamento.categoria)
+                );
+
+                const nomeCategoria = categoria
+                    ? categoria.nome
+                    : "Categoria não encontrada";
+
+                const valor = Number(orcamento.limite).toLocaleString(
+                    "pt-BR",
+                    { style: "currency", currency: "BRL" }
+                );
+
+                return `
+                    <div class="lancamento">
+                        <div>
+                            <strong>${nomeCategoria}</strong>
+                            <p>Limite: ${valor}</p>
+                            <p>Período: ${meses[orcamento.mes]} de ${orcamento.ano}</p>
+                        </div>
+
+                        <div>
+                            <button onclick="editarOrcamento(${orcamento.id})">
+                                Editar
+                            </button>
+
+                            <button onclick="excluirOrcamento(${orcamento.id})">
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        document.getElementById("form-orcamento").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const id = document.getElementById("orcamento-id").value;
+
+            const dados = {
+                categoria: Number(document.getElementById("categoria").value),
+                limite: document.getElementById("limite").value,
+                mes: Number(document.getElementById("mes").value),
+                ano: Number(document.getElementById("ano").value)
+            };
+
+            try {
+                const resposta = await fetch(
+                    API + "orcamentos/" + (id ? id + "/" : ""),
+                    {
+                        method: id ? "PUT" : "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(dados)
+                    }
+                );
+
+                const resultado = resposta.status === 204
+                    ? null
+                    : await resposta.json();
+
+                if (!resposta.ok) {
+                    throw new Error(JSON.stringify(resultado));
+                }
+
+                document.getElementById("mensagem").textContent =
+                    id ? "Orçamento atualizado com sucesso!" : "Orçamento cadastrado com sucesso!";
+
+                cancelarEdicao();
+                await carregarDados();
+
+            } catch (erro) {
+                document.getElementById("mensagem").textContent = erro.message;
+            }
+        });
+
+        function editarOrcamento(id) {
+            const orcamento = orcamentos.find(o => o.id === id);
+
+            if (!orcamento) return;
+
+            document.getElementById("orcamento-id").value = orcamento.id;
+            document.getElementById("categoria").value = orcamento.categoria;
+            document.getElementById("limite").value = orcamento.limite;
+            document.getElementById("mes").value = orcamento.mes;
+            document.getElementById("ano").value = orcamento.ano;
+
+            document.getElementById("titulo-form").textContent = "Editar orçamento";
+            document.getElementById("btn-salvar").textContent = "Salvar alterações";
+            document.getElementById("btn-cancelar").hidden = false;
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        async function excluirOrcamento(id) {
+            if (!confirm("Deseja excluir este orçamento?")) return;
+
+            try {
+                const resposta = await fetch(API + "orcamentos/" + id + "/", {
+                    method: "DELETE"
+                });
+
+                if (!resposta.ok) {
+                    throw new Error("Erro ao excluir orçamento.");
+                }
+
+                document.getElementById("mensagem").textContent =
+                    "Orçamento excluído com sucesso!";
+
+                await carregarDados();
+
+            } catch (erro) {
+                document.getElementById("mensagem").textContent = erro.message;
+            }
+        }
+
+        function cancelarEdicao() {
+            document.getElementById("form-orcamento").reset();
+            document.getElementById("orcamento-id").value = "";
+
+            document.getElementById("titulo-form").textContent = "Cadastrar orçamento";
+            document.getElementById("btn-salvar").textContent = "Salvar orçamento";
+            document.getElementById("btn-cancelar").hidden = true;
+
+            document.getElementById("ano").value = new Date().getFullYear();
+        }
+
+        document.getElementById("ano").value = new Date().getFullYear();
+
+        carregarDados();
+    </script>
+
+</body>
+</html>

@@ -25,7 +25,6 @@ class FinanceiroPagination(PageNumberPagination):
         if page_size is None:
             return None
 
-        queryset = queryset.order_by("pk")
         self.paginator = self.django_paginator_class(queryset, page_size)
 
         try:

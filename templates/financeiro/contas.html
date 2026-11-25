@@ -1,0 +1,185 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas - Meu Financeiro</title>
+    <link rel="stylesheet" href="{% static 'financeiro/css/style.css' %}">
+</head>
+<body>
+    <header class="topo">
+        <h1>Minhas Contas</h1>
+        <p>Gerencie suas contas bancárias.</p>
+        <a href="/">Voltar ao dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="acoes">
+            <h2 id="titulo-formulario">Cadastrar conta</h2>
+            <form id="form-conta">
+                <input type="hidden" id="conta-id">
+
+                <label>Nome da conta</label>
+                <input type="text" id="nome" required>
+
+                <label>Banco</label>
+                <input type="text" id="banco">
+
+                <label>Saldo inicial</label>
+                <input type="number" id="saldo_inicial" min="0" step="0.01" required>
+
+                <label>
+                    <input type="checkbox" id="ativa" checked>
+                    Conta ativa
+                </label>
+
+                <button type="submit">Salvar conta</button>
+                <button type="button" id="cancelar" hidden>Cancelar edição</button>
+            </form>
+            <p id="mensagem"></p>
+        </section>
+
+        <section class="acoes">
+            <h2>Contas cadastradas</h2>
+            <div class="card" id="lista-contas">Carregando...</div>
+        </section>
+    </main>
+
+    <script>
+        const API = "/api/financeiro/contas/";
+        const form = document.getElementById("form-conta");
+        const lista = document.getElementById("lista-contas");
+        const mensagem = document.getElementById("mensagem");
+
+        async function carregarContas() {
+            try {
+                const resposta = await fetch(API);
+                if (!resposta.ok) throw new Error("Erro ao buscar contas.");
+
+                const dados = await resposta.json();
+                const contas = dados.results ?? dados;
+
+                lista.replaceChildren();
+
+                if (!contas.length) {
+                    lista.textContent = "Nenhuma conta cadastrada.";
+                    return;
+                }
+
+                contas.forEach(conta => {
+                    const item = document.createElement("div");
+                    item.className = "lancamento";
+
+                    const info = document.createElement("div");
+                    const nome = document.createElement("strong");
+                    nome.textContent = conta.nome;
+
+                    const banco = document.createElement("p");
+                    banco.textContent = conta.banco || "Banco não informado";
+
+                    const saldo = document.createElement("p");
+                    saldo.textContent = "Saldo: " +
+                        Number(conta.saldo_inicial).toLocaleString("pt-BR", {
+                            style: "currency", currency: "BRL"
+                        });
+
+                    const status = document.createElement("p");
+                    status.textContent = conta.ativa ? "Ativa" : "Inativa";
+
+                    info.append(nome, banco, saldo, status);
+
+                    const editar = document.createElement("button");
+                    editar.textContent = "Editar";
+                    editar.onclick = () => editarConta(conta);
+
+                    const excluir = document.createElement("button");
+                    excluir.textContent = "Excluir";
+                    excluir.onclick = () => excluirConta(conta.id);
+
+                    item.append(info, editar, excluir);
+                    lista.appendChild(item);
+                });
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        form.addEventListener("submit", async evento => {
+            evento.preventDefault();
+
+            const id = document.getElementById("conta-id").value;
+
+            const dados = {
+                nome: document.getElementById("nome").value,
+                banco: document.getElementById("banco").value,
+                saldo_inicial: document.getElementById("saldo_inicial").value,
+                ativa: document.getElementById("ativa").checked
+            };
+
+            try {
+                const resposta = await fetch(id ? API + id + "/" : API, {
+                    method: id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(dados)
+                });
+
+                if (!resposta.ok) {
+                    const erro = await resposta.json();
+                    throw new Error(JSON.stringify(erro));
+                }
+
+                mensagem.textContent = id
+                    ? "Conta atualizada com sucesso!"
+                    : "Conta cadastrada com sucesso!";
+
+                form.reset();
+                document.getElementById("conta-id").value = "";
+                document.getElementById("titulo-formulario").textContent = "Cadastrar conta";
+                document.getElementById("cancelar").hidden = true;
+                carregarContas();
+            } catch (erro) {
+                mensagem.textContent = "Erro: " + erro.message;
+            }
+        });
+
+        function editarConta(conta) {
+            document.getElementById("conta-id").value = conta.id;
+            document.getElementById("nome").value = conta.nome;
+            document.getElementById("banco").value = conta.banco;
+            document.getElementById("saldo_inicial").value = conta.saldo_inicial;
+            document.getElementById("ativa").checked = conta.ativa;
+            document.getElementById("titulo-formulario").textContent = "Editar conta";
+            document.getElementById("cancelar").hidden = false;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        async function excluirConta(id) {
+            if (!confirm("Deseja realmente excluir esta conta?")) return;
+
+            try {
+                const resposta = await fetch(API + id + "/", {
+                    method: "DELETE"
+                });
+
+                if (!resposta.ok) throw new Error("Não foi possível excluir.");
+
+                mensagem.textContent = "Conta excluída com sucesso!";
+                carregarContas();
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        document.getElementById("cancelar").addEventListener("click", () => {
+            form.reset();
+            document.getElementById("conta-id").value = "";
+            document.getElementById("titulo-formulario").textContent = "Cadastrar conta";
+            document.getElementById("cancelar").hidden = true;
+        });
+
+        carregarContas();
+    </script>
+</body>
+</html>

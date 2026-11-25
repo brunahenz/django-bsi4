@@ -1,4 +1,4 @@
-{% load static %} {% load l10n %}
+{% load static %}
 
 <!doctype html>
 <html lang="pt-br">
@@ -18,16 +18,17 @@
       <section class="resumo">
         <div class="card saldo">
           <h3>Saldo disponível</h3>
-          <p>R$ {{ saldo_total|floatformat:2|localize }}</p>
+          <p id="saldo-total">Carregando...</p>
         </div>
 
         <div class="card receita">
           <h3>Receitas</h3>
-          <p>R$ {{ total_receitas|floatformat:2|localize }}</p>
+          <p id="total-receitas">Carregando...</p>
         </div>
+
         <div class="card despesa">
           <h3>Despesas</h3>
-          <p>R$ {{ total_despesas|floatformat:"2"|localize }}</p>
+          <p id="total-despesas">Carregando...</p>
         </div>
       </section>
 
@@ -35,33 +36,157 @@
         <h2>Gerenciamento financeiro</h2>
 
         <div class="links">
-          <a href="/api/financeiro/contas/">Contas</a>
-          <a href="/api/financeiro/categorias/">Categorias</a>
-          <a href="/api/financeiro/lancamentos/">Lançamentos</a>
-          <a href="/api/financeiro/orcamentos/">Orçamentos</a>
+          <a href="/contas/">Contas</a>
+          <a href="/categorias/">Categorias</a>
+          <a href="/lancamentos/">Lançamentos</a>
+          <a href="/orcamentos/">Orçamentos</a>
         </div>
       </section>
 
       <section class="acoes">
         <h2>Últimos lançamentos</h2>
 
-        <div class="card">
-          {% for lancamento in ultimos_lancamentos %}
-          <div class="lancamento">
-            <div>
-              <strong>{{ lancamento.descricao }}</strong>
-              <p>{{ lancamento.data|date:"d/m/Y" }}</p>
-            </div>
-            <strong>
-              {% if lancamento.tipo == "receita" %}+{% else %}-{% endif %} 
-              R$ {{lancamento.valor|floatformat:"2"|localize}}
-            </strong>
-          </div>
-          {% empty %}
-          <p>Nenhum lançamento cadastrado.</p>
-          {% endfor %}
+        <div class="card" id="lista-lancamentos">
+          <p>Carregando lançamentos...</p>
         </div>
       </section>
+
+      <p id="mensagem-erro" role="alert"></p>
     </main>
+
+    <script>
+      const API = "/api/financeiro/";
+
+      function formatarMoeda(valor) {
+        return Number(valor).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        });
+      }
+
+      async function buscarTodos(endpoint) {
+        let url = API + endpoint + "?page_size=100";
+        let registros = [];
+
+        while (url) {
+          const resposta = await fetch(url);
+
+          if (!resposta.ok) {
+            throw new Error("Não foi possível carregar os dados da API.");
+          }
+
+          const dados = await resposta.json();
+
+          registros = registros.concat(dados.results);
+
+          if (dados.total_pages && dados.page < dados.total_pages) {
+            url = API + endpoint + "?page_size=100&page=" + (dados.page + 1);
+          } else {
+            url = null;
+          }
+        }
+
+        return registros;
+      }
+
+      function atualizarResumo(contas, lancamentos) {
+        const saldoInicial = contas
+          .filter((conta) => conta.ativa)
+          .reduce((total, conta) => total + Number(conta.saldo_inicial), 0);
+
+        const receitas = lancamentos
+          .filter((lancamento) => lancamento.tipo === "receita")
+          .reduce((total, lancamento) => total + Number(lancamento.valor), 0);
+
+        const despesas = lancamentos
+          .filter((lancamento) => lancamento.tipo === "despesa")
+          .reduce((total, lancamento) => total + Number(lancamento.valor), 0);
+
+        const saldo = saldoInicial + receitas - despesas;
+
+        document.getElementById("saldo-total").textContent =
+          formatarMoeda(saldo);
+
+        document.getElementById("total-receitas").textContent =
+          formatarMoeda(receitas);
+
+        document.getElementById("total-despesas").textContent =
+          formatarMoeda(despesas);
+      }
+
+      function mostrarLancamentos(lancamentos) {
+        const lista = document.getElementById("lista-lancamentos");
+
+        lista.replaceChildren();
+
+        lancamentos.sort((a, b) => {
+          const comparacaoData = b.data.localeCompare(a.data);
+
+          if (comparacaoData !== 0) {
+            return comparacaoData;
+          }
+
+          return b.id - a.id;
+        });
+
+        const ultimos = lancamentos.slice(0, 5);
+
+        if (ultimos.length === 0) {
+          const mensagem = document.createElement("p");
+          mensagem.textContent = "Nenhum lançamento cadastrado.";
+          lista.appendChild(mensagem);
+          return;
+        }
+
+        ultimos.forEach((lancamento) => {
+          const item = document.createElement("div");
+          item.className = "lancamento";
+
+          const informacoes = document.createElement("div");
+
+          const descricao = document.createElement("strong");
+          descricao.textContent = lancamento.descricao;
+
+          const data = document.createElement("p");
+          const [ano, mes, dia] = lancamento.data.split("-");
+          data.textContent = `${dia}/${mes}/${ano}`;
+
+          informacoes.appendChild(descricao);
+          informacoes.appendChild(data);
+
+          const valor = document.createElement("strong");
+          const sinal = lancamento.tipo === "receita" ? "+" : "-";
+
+          valor.textContent = sinal + " " + formatarMoeda(lancamento.valor);
+
+          item.appendChild(informacoes);
+          item.appendChild(valor);
+
+          lista.appendChild(item);
+        });
+      }
+
+      async function carregarDashboard() {
+        try {
+          const [contas, lancamentos] = await Promise.all([
+            buscarTodos("contas/"),
+            buscarTodos("lancamentos/"),
+          ]);
+
+          atualizarResumo(contas, lancamentos);
+          mostrarLancamentos(lancamentos);
+        } catch (erro) {
+          document.getElementById("mensagem-erro").textContent =
+            "Erro ao carregar os dados. Verifique se a API está funcionando.";
+
+          document.getElementById("lista-lancamentos").textContent =
+            "Não foi possível carregar os lançamentos.";
+
+          console.error(erro);
+        }
+      }
+
+      carregarDashboard();
+    </script>
   </body>
 </html>

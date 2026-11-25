@@ -1,0 +1,192 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorias - Meu Financeiro</title>
+    <link rel="stylesheet" href="{% static 'financeiro/css/style.css' %}">
+</head>
+<body>
+    <header class="topo">
+        <h1>Minhas Categorias</h1>
+        <p>Organize suas receitas e despesas.</p>
+        <a href="/">Voltar ao dashboard</a>
+    </header>
+
+    <main class="container">
+        <section class="acoes">
+            <div class="card">
+                <h2 id="titulo-formulario">Cadastrar categoria</h2>
+
+                <form id="form-categoria">
+                    <input type="hidden" id="categoria-id">
+
+                    <label for="nome">Nome</label>
+                    <input type="text" id="nome" maxlength="100" required>
+
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo" required>
+                        <option value="">Selecione</option>
+                        <option value="receita">Receita</option>
+                        <option value="despesa">Despesa</option>
+                    </select>
+
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" rows="3"></textarea>
+
+                    <button type="submit">Salvar categoria</button>
+                    <button type="button" id="cancelar" hidden>Cancelar edição</button>
+                </form>
+
+                <p id="mensagem" role="alert"></p>
+            </div>
+        </section>
+
+        <section class="acoes">
+            <h2>Categorias cadastradas</h2>
+            <div class="card" id="lista-categorias">Carregando...</div>
+        </section>
+    </main>
+
+    <script>
+        const API = "/api/financeiro/categorias/";
+        const form = document.getElementById("form-categoria");
+        const lista = document.getElementById("lista-categorias");
+        const mensagem = document.getElementById("mensagem");
+
+        async function carregarCategorias() {
+            try {
+                const resposta = await fetch(API);
+                if (!resposta.ok) throw new Error("Erro ao carregar categorias.");
+
+                const dados = await resposta.json();
+                const categorias = dados.results ?? dados;
+
+                lista.replaceChildren();
+
+                if (!categorias.length) {
+                    lista.textContent = "Nenhuma categoria cadastrada.";
+                    return;
+                }
+
+                categorias.forEach(categoria => {
+                    const item = document.createElement("div");
+                    item.className = "lancamento";
+
+                    const info = document.createElement("div");
+
+                    const nome = document.createElement("strong");
+                    nome.textContent = categoria.nome;
+
+                    const tipo = document.createElement("p");
+                    tipo.textContent = categoria.tipo === "receita"
+                        ? "Receita"
+                        : "Despesa";
+
+                    const descricao = document.createElement("p");
+                    descricao.textContent = categoria.descricao || "Sem descrição";
+
+                    info.append(nome, tipo, descricao);
+
+                    const editar = document.createElement("button");
+                    editar.textContent = "Editar";
+                    editar.onclick = () => editarCategoria(categoria);
+
+                    const excluir = document.createElement("button");
+                    excluir.textContent = "Excluir";
+                    excluir.onclick = () => excluirCategoria(categoria.id);
+
+                    item.append(info, editar, excluir);
+                    lista.appendChild(item);
+                });
+            } catch (erro) {
+                mensagem.textContent = erro.message;
+            }
+        }
+
+        form.addEventListener("submit", async evento => {
+            evento.preventDefault();
+
+            const id = document.getElementById("categoria-id").value;
+
+            const dados = {
+                nome: document.getElementById("nome").value,
+                tipo: document.getElementById("tipo").value,
+                descricao: document.getElementById("descricao").value
+            };
+
+            try {
+                const resposta = await fetch(id ? API + id + "/" : API, {
+                    method: id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(dados)
+                });
+
+                if (!resposta.ok) {
+                    const erro = await resposta.json();
+                    throw new Error(JSON.stringify(erro));
+                }
+
+                mensagem.textContent = id
+                    ? "Categoria atualizada com sucesso!"
+                    : "Categoria cadastrada com sucesso!";
+
+                form.reset();
+                document.getElementById("categoria-id").value = "";
+                document.getElementById("titulo-formulario").textContent =
+                    "Cadastrar categoria";
+                document.getElementById("cancelar").hidden = true;
+
+                carregarCategorias();
+            } catch (erro) {
+                mensagem.textContent = "Erro: " + erro.message;
+            }
+        });
+
+        function editarCategoria(categoria) {
+            document.getElementById("categoria-id").value = categoria.id;
+            document.getElementById("nome").value = categoria.nome;
+            document.getElementById("tipo").value = categoria.tipo;
+            document.getElementById("descricao").value = categoria.descricao || "";
+
+            document.getElementById("titulo-formulario").textContent =
+                "Editar categoria";
+            document.getElementById("cancelar").hidden = false;
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        async function excluirCategoria(id) {
+            if (!confirm("Deseja realmente excluir esta categoria?")) return;
+
+            try {
+                const resposta = await fetch(API + id + "/", {
+                    method: "DELETE"
+                });
+
+                if (!resposta.ok) {
+                    const erro = await resposta.json();
+                    throw new Error(JSON.stringify(erro));
+                }
+
+                mensagem.textContent = "Categoria excluída com sucesso!";
+                carregarCategorias();
+            } catch (erro) {
+                mensagem.textContent = "Erro: " + erro.message;
+            }
+        }
+
+        document.getElementById("cancelar").addEventListener("click", () => {
+            form.reset();
+            document.getElementById("categoria-id").value = "";
+            document.getElementById("titulo-formulario").textContent =
+                "Cadastrar categoria";
+            document.getElementById("cancelar").hidden = true;
+        });
+
+        carregarCategorias();
+    </script>
+</body>
+</html>

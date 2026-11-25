@@ -5,117 +5,161 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
-    color: #263238;
+:root {
+    --verde: #176b50;
+    --verde-escuro: #124b3c;
+    --verde-claro: #e8f5ef;
+    --fundo: #f5f7f6;
+    --texto: #24332d;
+    --cinza: #77827d;
+    --borda: #e6ece8;
+    --branco: #ffffff;
+    --vermelho: #d9534f;
 }
 
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    line-height: 1.5;
+}
+
+/* Cabeçalho */
+
 .topo {
-    background-color: #173b35;
+    background: linear-gradient(120deg, #124b3c, #1b7255);
     color: white;
-    padding: 35px 8%;
+    padding: 38px 8%;
 }
 
 .topo h1 {
     font-size: 30px;
-    margin-bottom: 10px;
+    font-weight: 700;
+    margin-bottom: 6px;
 }
 
 .topo p {
-    color: #d5e5df;
+    color: #d4e8df;
+    font-size: 15px;
 }
+
+.topo a {
+    display: inline-block;
+    margin-top: 18px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.topo a:hover {
+    text-decoration: underline;
+}
+
+/* Conteúdo */
 
 .container {
-    width: 85%;
-    max-width: 1200px;
-    margin: 40px auto;
-}
-
-.resumo {
-    display: flex;
-    gap: 25px;
-    flex-wrap: wrap;
-}
-
-.card {
-    flex: 1;
-    min-width: 220px;
-    background-color: white;
-    padding: 28px;
-    border-radius: 12px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
-    border-left: 5px solid #173b35;
-}
-
-.card h3 {
-    font-size: 16px;
-    color: #66736f;
-    margin-bottom: 18px;
-}
-
-.card p {
-    font-size: 26px;
-    font-weight: bold;
-}
-
-.receita {
-    border-left-color: #22966b;
-}
-
-.despesa {
-    border-left-color: #d9534f;
+    width: 88%;
+    max-width: 1250px;
+    margin: 38px auto;
 }
 
 .acoes {
-    margin-top: 45px;
+    margin-top: 42px;
 }
 
 .acoes h2 {
-    margin-bottom: 22px;
+    font-size: 21px;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
+
+/* Cards do dashboard */
+
+.resumo {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.card {
+    background: var(--branco);
+    padding: 26px;
+    border-radius: 16px;
+    border: 1px solid var(--borda);
+    box-shadow: 0 4px 16px rgba(25, 55, 40, 0.04);
+}
+
+.resumo .card {
+    border-left: 4px solid var(--verde);
+}
+
+.card h3 {
+    font-size: 14px;
+    color: var(--cinza);
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.card p {
+    font-size: 25px;
+    font-weight: 700;
+    color: var(--texto);
+}
+
+.receita {
+    border-left-color: #22966b !important;
+}
+
+.receita p {
+    color: #22966b;
+}
+
+.despesa {
+    border-left-color: var(--vermelho) !important;
+}
+
+.despesa p {
+    color: var(--vermelho);
+}
+
+/* Links de navegação */
 
 .links {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18px;
 }
 
 .links a {
-    background-color: white;
-    padding: 25px;
-    border-radius: 10px;
+    display: block;
+    background: white;
+    padding: 23px;
+    border: 1px solid var(--borda);
+    border-radius: 14px;
     text-decoration: none;
-    color: #173b35;
-    font-weight: bold;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
-    transition: 0.3s;
+    color: var(--verde-escuro);
+    font-weight: 650;
+    box-shadow: 0 4px 14px rgba(25, 55, 40, 0.04);
+    transition: 0.2s ease;
 }
 
 .links a:hover {
-    background-color: #173b35;
-    color: white;
+    border-color: var(--verde);
+    color: var(--verde);
     transform: translateY(-3px);
+    box-shadow: 0 7px 18px rgba(25, 55, 40, 0.09);
 }
 
-@media (max-width: 600px) {
-    .container {
-        width: 92%;
-    }
+/* Lançamentos */
 
-    .topo {
-        padding: 28px 5%;
-    }
-}
-
-/* Organização dos últimos lançamentos */
 .lancamento {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 20px;
-    padding: 18px 0;
-    border-bottom: 1px solid #e5e9e7;
+    padding: 19px 0;
+    border-bottom: 1px solid var(--borda);
 }
 
 .lancamento:last-child {
@@ -123,16 +167,133 @@ body {
 }
 
 .lancamento p {
-    color: #7a8581;
-    font-size: 14px;
-    margin-top: 6px;
+    color: var(--cinza);
+    font-size: 13px;
+    margin-top: 5px;
 }
 
 .lancamento strong {
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .lancamento > strong {
     white-space: nowrap;
+}
+
+/* Formulários */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+form label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--texto);
+    margin-top: 8px;
+}
+
+input:not([type="checkbox"]),
+select,
+textarea {
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #dce5df;
+    border-radius: 9px;
+    background: white;
+    color: var(--texto);
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(23, 107, 80, 0.10);
+}
+
+input[type="checkbox"] {
+    accent-color: var(--verde);
+    margin-right: 7px;
+}
+
+/* Botões */
+
+button {
+    border: none;
+    border-radius: 9px;
+    padding: 12px 19px;
+    background: var(--verde);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 8px;
+}
+
+button:hover {
+    background: var(--verde-escuro);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button[hidden] {
+    display: none;
+}
+
+/* Mensagens */
+
+#mensagem,
+#mensagem-erro {
+    margin-top: 15px;
+    font-size: 14px;
+    color: var(--verde);
+}
+
+/* Responsividade */
+
+@media (max-width: 900px) {
+    .links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .resumo {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: 92%;
+        margin: 25px auto;
+    }
+
+    .topo {
+        padding: 28px 5%;
+    }
+
+    .topo h1 {
+        font-size: 25px;
+    }
+
+    .links {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        padding: 21px;
+    }
+
+    .lancamento {
+        align-items: flex-start;
+    }
 }
 

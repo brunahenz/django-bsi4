@@ -6,7 +6,8 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from financeiro.views import dashboard
+from financeiro.views import dashboard, pagina_contas, pagina_categorias, pagina_lancamentos, pagina_orcamentos
+
 
 
 router = DefaultRouter()
@@ -20,6 +21,11 @@ urlpatterns = [
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("api/financeiro/", include("financeiro.urls")),
     path("", dashboard, name="dashboard"),
+    path("contas/", pagina_contas, name="pagina_contas"),
+    path("categorias/", pagina_categorias, name="pagina_categorias"),
+    path("lancamentos/", pagina_lancamentos, name="pagina_lancamentos"),
+    path("orcamentos/", pagina_orcamentos, name="pagina_orcamentos"),
+
 ]
 
 

@@ -21,6 +21,7 @@ class ContaViewSet(viewsets.ModelViewSet):
     filterset_fields = ["nome", "banco", "ativa"]
     search_fields = ["nome", "banco"]
     ordering_fields = ["nome", "saldo_inicial", "data_criacao"]
+    ordering = ["pk"]
 
 
 class CategoriaViewSet(viewsets.ModelViewSet):
@@ -30,6 +31,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     filterset_fields = ["nome", "tipo"]
     search_fields = ["nome", "descricao"]
     ordering_fields = ["nome", "tipo"]
+    ordering = ["pk"]
 
 
 class LancamentoViewSet(viewsets.ModelViewSet):
@@ -39,6 +41,7 @@ class LancamentoViewSet(viewsets.ModelViewSet):
     filterset_fields = ["tipo", "data", "conta", "categoria"]
     search_fields = ["descricao", "observacao"]
     ordering_fields = ["valor", "data", "descricao"]
+    ordering = ["pk"]
 
 
 class OrcamentoViewSet(viewsets.ModelViewSet):
@@ -48,6 +51,7 @@ class OrcamentoViewSet(viewsets.ModelViewSet):
     filterset_fields = ["categoria", "mes", "ano"]
     search_fields = ["categoria__nome"]
     ordering_fields = ["limite", "mes", "ano"]
+    ordering = ["pk"]
 
 def dashboard(request):
     total_receitas = Lancamento.objects.filter(
@@ -74,3 +78,17 @@ def dashboard(request):
     }
 
     return render(request, "financeiro/dashboard.html", contexto)
+
+def pagina_contas(request):
+    return render(request, "financeiro/contas.html")
+
+def pagina_categorias(request):
+    return render(request, "financeiro/categorias.html")
+
+def pagina_lancamentos(request):
+    return render(request, "financeiro/lancamentos.html")
+
+
+def pagina_orcamentos(request):
+    return render(request, "financeiro/orcamentos.html")
+
